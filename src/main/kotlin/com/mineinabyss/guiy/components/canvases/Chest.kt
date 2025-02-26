@@ -1,7 +1,9 @@
 package com.mineinabyss.guiy.components.canvases
 
 import androidx.compose.runtime.*
+import com.mineinabyss.guiy.components.rememberMiniMsg
 import com.mineinabyss.guiy.components.state.IntCoordinates
+import com.mineinabyss.guiy.inventory.LocalGuiyOwner
 import com.mineinabyss.guiy.layout.Layout
 import com.mineinabyss.guiy.layout.Size
 import com.mineinabyss.guiy.modifiers.Modifier
@@ -27,13 +29,13 @@ const val MAX_CHEST_HEIGHT = 6
  */
 @Composable
 fun Chest(
-    viewers: Set<Player>,
     title: String,
     modifier: Modifier = Modifier,
-    onClose: (InventoryCloseScope.(player: Player) -> Unit) = {},
+    onClose: (InventoryCloseScope.(player: Player) -> Unit) = { exit() },
     content: @Composable () -> Unit,
 ) {
-    Chest(viewers, title.miniMsg(), modifier, onClose, content)
+    val titleMM = rememberMiniMsg(title)
+    Chest(titleMM, modifier, onClose, content)
 }
 
 /**
@@ -47,7 +49,6 @@ fun Chest(
  */
 @Composable
 fun Chest(
-    viewers: Set<Player>,
     title: Component,
     modifier: Modifier = Modifier,
     onClose: (InventoryCloseScope.(player: Player) -> Unit) = {},
@@ -58,6 +59,8 @@ fun Chest(
         Modifier.sizeIn(CHEST_WIDTH, CHEST_WIDTH, MIN_CHEST_HEIGHT, MAX_CHEST_HEIGHT).then(modifier)
         .onSizeChanged { if (size != it) size = it }
 
+    val owner = LocalGuiyOwner.current
+    val viewers by owner.viewers.collectAsState()
     val holder = rememberInventoryHolder(viewers, onClose)
 
     // Create new inventory when any appropriate value changes
@@ -73,7 +76,7 @@ fun Chest(
 
     val inventory: Inventory = remember(size) {
         Bukkit.createInventory(holder, CHEST_WIDTH * size.height, title).also {
-            holder.activeInventory = it
+            holder.setActiveInventory(it)
         }
     }
 
